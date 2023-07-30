@@ -1,0 +1,909 @@
+---
+title: "Project"
+author: "Matt Horowitz"
+date: "2023-07-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+#Read in files--file of addresses to be geocoded, initial clean to ensure geocode
+sales<-read.csv("C:\\Users\\Dheeraj\\Downloads\\realtor-data.csv")
+summary(sales)
+#Check Zip Code--need to format into 5 digits leading 0s
+summary(sales$zip_code)
+sum(is.na(sales$zip_code))
+str(sales$zip_code)
+#View(sales)
+#Where zipcode is unknown--197/512159 drop thos 197
+library(tidyr)
+sales1<-sales %>% drop_na(zip_code)
+str(sales1)
+
+#Check if dropped
+sum(is.na(sales1$zip_code))
+str(sales1)
+
+#Convert zipcode to have leading 0s
+#detach(sales)
+attach(sales1)
+
+sales1$zip_code<-as.character(zip_code)
+
+zip<-sprintf('%05d',as.integer(zip_code))
+zip
+sales1$zip_code <- zip
+
+#View(sales1)
+```
+
+
+```{r}
+#Geocode--on zipcode
+library(zipcodeR)
+geocodes<-geocode_zip(sales1$zip_code)
+geocodesdata<-data.frame(geocodes)
+library(sqldf)
+#View(sales1)
+#View(geocodesdata)
+#Attach via sql query
+#View(geocodesdata)
+salestotal<-sqldf("select * from sales1, geocodesdata where sales1.zip_code=geocodesdata.zipcode")
+#View(salestotal)
+#Missing values--5762/509115 around 1% so drop
+sum(is.na(salestotal$lat))
+sum(is.na(salestotal$lng))
+str(salestotal)
+salestotala<-salestotal %>% drop_na(lng)
+sum(is.na(salestotala$lat))
+sum(is.na(salestotala$lng))
+#View(salestotala)
+
+#Read in second file, buy don't buy
+even<-read.csv("BreakEven_2017-03.csv")
+#View(even)
+
+#Read in the zillow data to merge with even data for region ID to fips code 
+zillow <- read.csv("CountyCrossWalk_Zillow.csv")
+#View(zillow)
+
+#merging even and zillow data but there is a loss in data. 
+even1 <- sqldf("select * from even, zillow where even.RegionId=zillow.CountyRegionID_Zillow")
+#View(even1)
+
+
+#Read in fips2county data
+fips2county1 <- read.csv("fips2county.tsv")
+#View(fips2county1)
+
+#Convert fips2county1$StateFIPS to have leading 0s
+fips2county1$StateFIPS <- as.character(fips2county1$StateFIPS)
+statefips <- sprintf('%02d', as.integer(fips2county1$StateFIPS))
+statefips
+fips2county1$StateFIPS <- statefips
+
+#Convert fips2county1$CountyFIPS_3 to have leading 0s
+fips2county1$CountyFIPS_3 <- as.character(fips2county1$CountyFIPS_3)
+countyfips <- sprintf('%03d', as.integer(fips2county1$CountyFIPS_3))
+countyfips
+fips2county1$CountyFIPS_3 <- countyfips
+
+#Convert fips2county1$CountyFIPS to have leading 0s
+fips2county1$CountyFIPS <- as.character(fips2county1$CountyFIPS)
+countyfips5 <- sprintf('%05d', as.integer(fips2county1$CountyFIPS))
+countyfips5
+fips2county1$CountyFIPS <- countyfips5
+
+#View(fips2county1)
+
+#Delete Later
+fips2county2 <- sqldf("select StateFIPS, CountyFIPS_3, CountyName, StateName, CountyFIPS from fips2county1")
+#View(fips2county2)
+state <- read.csv("states.csv")
+#View(state)
+fips2county3 <- sqldf("select * from fips2county2, state where fips2county2.StateName=state.State")
+#View(fips2county3)
+even3 <- sqldf("select * from even, fips2county3 where even.StateName=fips2county3.Abbreviation and even.CountyName=fips2county3.CountyName")
+View(even3)
+as.factor(even3$RegionID)
+#View(even3$RegionID)
+
+statefips1 <- even3$StateFIPS
+countyfips1 <- even3$CountyFIPS_3
+
+
+
+
+
+#merging even and fips2county1 data
+#even3 <- sqldf("select * from even, fips2county1 where     even.StateName=fips2county1.StateAbbr and even.CountyName=fips2county1.CountyName")
+#even3 data contains even data and fips code
+#Deleting duplicate column CountyName
+#even3 <- even3[,-6]
+#View(even3)
+
+
+#Read ZIP-COUNTY-FIPS data for fips to zip code
+zipcode2fips <- read.csv("ZIP-COUNTY-FIPS_2018-03.csv")
+##View(zipcode2fips)
+zip2fips1 <- sqldf("select ZIP, STCOUNTYFP, COUNTYNAME, STATE from zipcode2fips")
+
+#Convert zip2fips1$STCOUNTYFP to have leading 0s
+zip2fips1$STCOUNTYFP<-as.character(zip2fips1$STCOUNTYFP)
+stcounty<-sprintf('%05d',as.integer(zip2fips1$STCOUNTYFP))
+zip2fips1$STCOUNTYFP <- stcounty
+#View(zip2fips1)
+
+even3 <- even3[,-6]
+#View(even3)
+
+
+#merging even3 and zip2fips1 data
+even4 <- sqldf("select * from even3, zip2fips1 where even3.CountyFIPS=zip2fips1.STCOUNTYFP")
+names(even4)
+#removing duplicate columns
+even4 <- even4[,-23]
+even4 <- even4[,-23]
+#even4 data containing fips, zip and breakeven data
+#View(even4)
+
+
+even4$ZIP <- as.factor(even4$ZIP)
+even4$ZIP
+
+breakeven <- even4$Breakeven
+zip <- even4$ZIP
+FIPS <- even4$STCOUNTYFP
+even5 <- cbind(breakeven, zip, FIPS)
+even5 <- data.frame(even5)
+even5$zip <- as.numeric(even5$zip)
+library(dplyr)
+n_distinct(even5$zip)
+#View(even5)
+
+library(stringr)
+k <- substr(even5$breakeven, 2, 2)
+q <- str_detect(k, " ")
+q <- data.frame(q)
+#View(q)
+even5 <- cbind(even5, q)
+even6 <-subset(even5, q)
+
+
+years <- substr(even6$breakeven, 1, 1)
+years <- as.numeric(years)
+summary(years)
+months <- years*12
+
+months1 <- substr(even6$breakeven, 15, 15)
+months1 <- as.numeric(months1)
+
+breakeven1 <- months + months1
+breakeven1
+
+even6 <- cbind(even6, breakeven1)
+#View(even6)
+FIPS1 <- even6$FIPS
+
+#calculating the breakeven data based on zip code
+mediansBreakeven <- even6%>%
+            group_by(zip)%>%
+            summarise(Median=median(breakeven1))
+
+
+#months1 <- c()
+#for (i in 1:length(even5$breakeven)) {
+  
+# j <- substr(even5$breakeven[i], 16, 16)
+  
+  
+# if(str_detect(j, " ") == TRUE){
+   # monthstemp <- substr(even5$breakeven[i], 15, 15)
+#  }
+#  else{
+#   monthstemp <- substr(even5$breakeven[i], 15, 16)
+#  }
+  
+#  print(i)
+#  months1 <- c(months1, monthstemp)
+#}
+
+salestotala$zip_code <- as.numeric(salestotala$zip_code)
+
+#Merging sales data with breakeven data
+saleseven <- sqldf("select * from salestotala, mediansBreakeven where salestotala.zip_code=mediansBreakeven.zip")
+names(saleseven)[17]<-"breakeven"
+View(saleseven)
+
+
+
+```
+
+
+
+```{r}
+
+sum(is.na(saleseven$price))
+#saleseven$bed = 95758
+sum(is.na(saleseven$bed))
+#saleseven$bath = 92129
+sum(is.na(saleseven$bath))
+#saleseven$acre_lot = 103546
+sum(is.na(saleseven$acre_lot))
+sum(is.na(saleseven$full_address))
+sum(is.na(saleseven$street))
+sum(is.na(saleseven$city))
+sum(is.na(saleseven$state))
+sum(is.na(saleseven$zip_code))
+#saleseven$acre_lot = 112989
+sum(is.na(saleseven$house_size))
+sum(is.na(saleseven$sold_date))
+sum(is.na(saleseven$zipcode))
+sum(is.na(saleseven$lat))
+sum(is.na(saleseven$lng))
+sum(is.na(saleseven$zip))
+sum(is.na(saleseven$breakeven))
+
+
+attach(saleseven)
+summary(saleseven)
+#replacing NA values in each column with median of that column
+saleseven$house_size <- replace(saleseven$house_size, is.na(saleseven$house_size), 1744)
+saleseven$bed <- replace(saleseven$bed, is.na(saleseven$bed), 3)
+saleseven$bath <- replace(saleseven$bath, is.na(saleseven$bath), 2)
+saleseven$acre_lot<- replace(saleseven$acre_lot, is.na(saleseven$acre_lot), 0.50)
+
+#removing duplicate columns
+saleseven <- saleseven[, c(-10, -16)]
+
+#did it sell
+salesdate <- data.frame(saleseven$sold_date)
+#checking the characters in the salesdate
+#sold_date 1 is not sold
+salesdate[salesdate$saleseven.sold_date == "",] <- "1"
+#sold_date 2 is sold
+salesdate[salesdate$saleseven.sold_date != "1",] <- "2"
+#combining the salesdate(0's and 1's) with saleseven data
+saleseven <- cbind(saleseven, salesdate)
+
+#factoring columns
+saleseven$bath <- as.factor(saleseven$bath)
+saleseven$bed <- as.factor(saleseven$bed)
+saleseven$saleseven.sold_date <- as.factor(saleseven$saleseven.sold_date)
+
+names(saleseven)[16] <- "has_sold"
+saleseven$has_sold <- as.numeric(saleseven$has_sold)
+
+#new build?
+status1 <- data.frame(saleseven$status)
+#checking the characters in the status
+str(status1)
+#status 1 is for sale
+status1[status1$saleseven.status == "for_sale",] <- "1"
+#sold_date 2 is ready to build
+status1[status1$saleseven.status == "ready_to_build",] <- "2"
+#combining the salesdate(0's and 1's) with saleseven data
+saleseven <- cbind(saleseven, status1)
+
+#changing the column name
+names(saleseven)[17] <- "new_build"
+saleseven$new_build <- as.numeric(saleseven$new_build)
+
+#five number summary
+summary(saleseven)
+
+#boxplot of continous predictors
+boxplot(saleseven$price)
+boxplot(saleseven$acre_lot)
+boxplot(saleseven$house_size)
+boxplot(saleseven$breakeven)
+
+#histogram for discrete predictors
+saleseven$new_build <- as.numeric(saleseven$new_build)
+saleseven$bath <- as.numeric(saleseven$bath)
+saleseven$bed <- as.numeric(saleseven$bed)
+saleseven$has_sold <- as.numeric(saleseven$has_sold)
+hist(saleseven$bed)
+hist(saleseven$bath)
+hist(saleseven$has_sold)
+hist(saleseven$new_build)
+
+
+
+View(saleseven)
+
+#Check if dependent variable regression evenly distributed
+
+#install.packages("nortest")
+library(nortest)
+adresult<-ad.test(saleseven$price)
+adresult
+
+#removing redundant data
+saleseven1 <- sqldf("select distinct * from saleseven")
+View(saleseven1)
+
+summary(saleseven1)
+
+#boxplot of price before cleaning
+boxplot(saleseven1$price)
+boxplot(saleseven1$acre_lot)
+boxplot(saleseven1$house_size)
+boxplot(saleseven1$breakeven)
+
+hist(saleseven1$bed)
+hist(saleseven1$bath)
+hist(saleseven1$has_sold)
+hist(saleseven1$new_build)
+
+#test to see if it is normally distributed after omitting outliers
+adresult1<-ad.test(saleseven1$price)
+adresult1
+
+
+#dropping rows with price more than 5 million(1233 out of 63861)
+saleseven2 <- saleseven1[saleseven1$price<5000000,]
+boxplot(saleseven2$price)
+
+
+#test to see if it is normally distributed after omitting outliers
+adresult2<-ad.test(saleseven2$price)
+adresult2
+
+#after removing outliers
+boxplot(saleseven2$price)
+
+#boxplot of predictors before removing leverages
+boxplot(saleseven2$acre_lot)
+boxplot(saleseven2$house_size)
+boxplot(saleseven2$breakeven)
+
+
+#removing leverages from acre lot(after cross checking with zillow app everything above 25 did not look right)
+saleseven3<- saleseven2[saleseven2$acre_lot<=3,]
+#removing leverages from house size
+saleseven3 <- saleseven3[saleseven3$house_size<=6000,]
+
+#box plot after removing leverages
+boxplot(saleseven3$acre_lot)
+boxplot(saleseven3$house_size)
+boxplot(saleseven3$breakeven)
+
+#histograms of predictors before removing leverages
+hist(saleseven3$bed)
+hist(saleseven3$bath)
+hist(saleseven3$has_sold)
+hist(saleseven3$new_build)
+
+#removing leverages from bedrooms
+saleseven4 <- saleseven3[saleseven3$bed<=10,]
+#removing leverages from bathroom
+saleseven5 <- saleseven4[saleseven4$bath<=10,]
+
+#histogram after removing leverages
+hist(saleseven5$bed)
+hist(saleseven5$bath)
+hist(saleseven5$has_sold)
+hist(saleseven5$new_build)
+
+summary(saleseven5)
+
+salesdata <- saleseven5
+
+#adding dummy variables for has_sold and new_build
+salesdata$has_sold[salesdata$has_sold == 1] <- 0
+salesdata$has_sold[salesdata$has_sold == 2] <- 1
+salesdata$new_build[salesdata$new_build == 1] <- 0
+salesdata$new_build[salesdata$new_build == 2] <- 1
+
+
+region <- data.frame(salesdata$state)
+region <- sqldf("select DISTINCT * from region")
+#View(region)
+
+salesdataholding <- salesdata
+
+
+state_pr<-data.frame(ifelse(salesdata$state=='Puerto Rico',1,0))
+state_ma<-data.frame(ifelse(salesdata$state=='Massachusetts',1,0))
+state_ct<-data.frame(ifelse(salesdata$state=='Connecticut',1,0))
+state_nj<-data.frame(ifelse(salesdata$state=='New Jersey',1,0))
+state_nh<-data.frame(ifelse(salesdata$state=='New Hampshire',1,0))
+state_vt<-data.frame(ifelse(salesdata$state=='Vermont',1,0))
+state_ny<-data.frame(ifelse(salesdata$state=='New York',1,0))
+state_ri<-data.frame(ifelse(salesdata$state=='Rhode Island',1,0))
+state_va<-data.frame(ifelse(salesdata$state=='Virginia',1,0))
+state_me<-data.frame(ifelse(salesdata$state=='Maine',1,0))
+state_pa<-data.frame(ifelse(salesdata$state=='Pennsylvania',1,0))
+state_wv<-data.frame(ifelse(salesdata$state=='West Virginia',1,0))
+
+salesdata <- cbind(salesdata, state_pr, state_ma, state_ct, state_nj, state_nh, state_vt, state_ny, state_ri, state_va, state_me, state_pa, state_wv)
+
+colnames(salesdata)[18] = "state_pr"
+colnames(salesdata)[19] = "state_ma"
+colnames(salesdata)[20] = "state_ct"
+colnames(salesdata)[21] = "state_nj"
+colnames(salesdata)[22] = "state_nh"
+colnames(salesdata)[23] = "state_vt"
+colnames(salesdata)[24] = "state_ny"
+colnames(salesdata)[25] = "state_ri"
+colnames(salesdata)[26] = "state_va"
+colnames(salesdata)[27] = "state_me"
+colnames(salesdata)[28] = "state_pa"
+colnames(salesdata)[29] = "state_wv"
+
+View(salesdata)
+
+
+#write.csv(salesdata, "cleaneddata.csv")
+
+```
+
+
+```{r}
+#Regression
+#linear regression
+#check correlatioin of independent variables ridge and lasso
+#GAM's
+#Logit
+#Logit(Sold)
+#Ensemble
+#Ensemble(Price and Sold)
+salesdata <- read.csv("cleaneddata.csv")
+salesdata <- salesdata[,-1]
+#View(salesdata)
+
+library(caret)
+library(pROC)
+#install.packages("Hmisc")
+library(Hmisc)
+library(glmnet)
+library(leaps)
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+salesdata1 <- salesdata
+
+set.seed(100)
+indexpartition1 <- createDataPartition(salesdata1$price, p=0.8, list = FALSE, times = 1)
+trainset1 <- salesdata1[indexpartition1,]
+testset1<-salesdata1[-indexpartition1,]
+#View(trainset1)
+
+#linear regression for training set
+lmfit <- lm(price~bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset1)
+summary(lmfit)
+plot(lmfit)
+
+#linear regression prediction
+lmfit.prediction <- predict(lmfit, testset1)
+meanrss.lm <- mean((lmfit.prediction-testset1$price)^2)
+#302373223135 mean rss
+
+#bestsubset selection
+regfit.full <- regsubsets(price~bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, testset1)
+reg.summary <-summary(regfit.full)
+names(reg.summary)
+reg.summary$adjr2
+
+#linear regression based on best subset selection variables
+lmfit.best <- lm(price~bed+bath+acre_lot+house_size+breakeven+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset1)
+summary(lmfit.best)
+
+
+#correlation matrix for calculating the correlations
+corr_dataframe <- trainset1[,c(3,4,5,10,15,17,18,19,20,21,22,23,24,25,26,27,28,29)]
+#calculating the correlation matrix
+rcorr(as.matrix(corr_dataframe))
+
+#bed-bath, house_size-bed, house_size-bath are highly correlated
+
+#ridge regression
+y_training <- as.matrix(trainset1$price)
+x_training <- model.matrix(price~bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset1)
+y_test <- as.matrix(testset1$price)
+x_test <- model.matrix(price~bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = testset1)
+
+grid <- 10^seq(10,-2, length = 100)
+#finding best lambda for ridge regression
+ridge.mod <- cv.glmnet(x_training,y_training, alpha = 0, lambda = grid, parallel = TRUE)
+summary(ridge.mod)
+plot(ridge.mod)
+lambda.best <- ridge.mod$lambda.min
+lambda.best
+
+#ridge regression for the lambda min
+ridge.prediction <- predict(ridge.mod, s=lambda.best, newx = x_test)
+summary(ridge.prediction)
+meanrss.ridge <- mean((ridge.prediction-y_test)^2)
+#302368819401 mean rss
+best.model <- glmnet(x_test, y_test, alpha = 0, lambda = lambda.best)
+coef(best.model)
+
+
+#lasso regression
+grid <- 10^seq(10,-2, length = 100)
+lasso.mod <- cv.glmnet(x_training,y_training, alpha = 1, lambda = grid, parallel = TRUE)
+summary(lasso.mod)
+plot(lasso.mod)
+lambda.best.lasso <- lasso.mod$lambda.min
+lambda.best.lasso
+
+#lasso regression for lambda min
+lasso.prediction <- predict(lasso.mod, s=lambda.best.lasso, newx = x_test)
+summary(lasso.prediction)
+meanrss.lasso <- mean((lasso.prediction-y_test)^2)
+meanrss.lasso
+
+#best model for lasso regression
+best.model.lasso <- glmnet(x_test, y_test, alpha = 1, lambda = lambda.best.lasso)
+coef(best.model.lasso)
+
+
+#ridge and lasso without new_build
+#ridge regression
+y_training1 <- as.matrix(trainset1$price)
+x_training1 <- model.matrix(price~bed+bath+acre_lot+house_size+breakeven+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset1)
+y_test1 <- as.matrix(testset1$price)
+x_test1 <- model.matrix(price~bed+bath+acre_lot+house_size+breakeven+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = testset1)
+
+grid1 <- 10^seq(10,-2, length = 100)
+#finding best lambda for ridge regression
+ridge.mod1 <- cv.glmnet(x_training1,y_training1, alpha = 0, lambda = grid1, parallel = TRUE)
+summary(ridge.mod1)
+plot(ridge.mod1)
+lambda.best1 <- ridge.mod1$lambda.min
+lambda.best1
+
+#ridge regression for the lambda min
+ridge.prediction1 <- predict(ridge.mod1, s=lambda.best1, newx = x_test1)
+summary(ridge.prediction1)
+meanrss.ridge1 <- mean((ridge.prediction1-y_test1)^2)
+#302361825257 mean rss
+best.model1 <- glmnet(x_test1, y_test1, alpha = 0, lambda = lambda.best1)
+coef(best.model1)
+
+#lasso regression
+grid1 <- 10^seq(10,-2, length = 100)
+lasso.mod1 <- cv.glmnet(x_training1,y_training1, alpha = 1, lambda = grid1, parallel = TRUE)
+summary(lasso.mod1)
+plot(lasso.mod1)
+lambda.best.lasso1 <- lasso.mod1$lambda.min
+lambda.best.lasso1
+
+#lasso regression for lambda min
+lasso.prediction1 <- predict(lasso.mod1, s=lambda.best.lasso1, newx = x_test1)
+summary(lasso.prediction1)
+meanrss.lasso1 <- mean((lasso.prediction1-y_test1)^2)
+meanrss.lasso1
+#302359419933 lasso rss mean
+
+#best model for lasso regression
+best.model.lasso1 <- glmnet(x_test1, y_test1, alpha = 1, lambda = lambda.best.lasso1)
+coef(best.model.lasso1)
+
+
+#general additive models 1(new_build removed)
+gam1 <- gam(price~bed+bath+acre_lot+house_size+breakeven+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, family = gaussian(), data = trainset1)
+summary(gam1)
+gam2 <- gam(price~s(bed)+s(bath)+s(acre_lot)+s(house_size)+s(breakeven), family = gaussian(), data = trainset1)
+summary(gam2)
+gampredict <- predict(gam2, testset1)
+meanrss_gam <- mean((gampredict-testset1$price)^2)
+meanrss_gam
+plot(gam2)
+
+```
+
+```{r}
+
+#logistic regression
+salesdata2 <- salesdata
+set.seed(100)
+indexpartition2 <- createDataPartition(salesdata2$has_sold, p=0.8, list = FALSE, times = 1)
+trainset2 <- salesdata2[indexpartition2,]
+testset2 <- salesdata2[-indexpartition2,]
+log.fit <- glm(has_sold~price+bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, family = binomial, data = trainset2)
+summary(log.fit)
+
+
+#after removing new_build
+log.fit1 <- glm(has_sold~price+bed+bath+acre_lot+house_size+breakeven+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, family = binomial, data = trainset2)
+summary(log.fit1)
+
+#after removing state names
+log.fit2 <- glm(has_sold~price+bed+bath+acre_lot+house_size+breakeven+new_build, family = binomial, data = trainset2)
+summary(log.fit2)
+
+#after removing new_build and state names
+log.fit3 <- glm(has_sold~price+bed+bath+acre_lot+house_size+breakeven, family = binomial, data = trainset2)
+summary(log.fit3)
+
+#confidence intervals
+confidence <- confint(log.fit2)
+confidence
+#predictions
+log.probs <- predict(log.fit2, type = "response")
+log.pred <- rep("NB", 43108)
+log.pred[log.probs>0.5]<-"B"
+log.prediction <- ifelse(runif(nrow(testset2))>=0.5,1,0)
+#confusion matrix
+confmatrix <- confusionMatrix(as.factor(log.prediction), as.factor(testset2$has_sold))
+confmatrix
+#ROC curve
+roc1 <- roc(log.prediction, testset2$has_sold)
+roc1
+ggroc(roc1)
+
+```
+Decision Trees
+
+```{r}
+
+#Classification Tree
+library(rpart)
+library(rpart.plot)
+#install.packages("rattle")
+library(rattle)
+library(RColorBrewer)
+library(randomForest)
+library(party)
+library(xgboost)
+library(readr)
+library(stringr)
+library(caret)
+library(car)
+library(e1071)
+library(ipred)
+library(dplyr)
+
+trainset2$state_pr <- as.factor(trainset2$state_pr)
+trainset2$state_ma <- as.factor(trainset2$state_ma)
+trainset2$state_ct <- as.factor(trainset2$state_ct)
+trainset2$state_nj <- as.factor(trainset2$state_nj)
+trainset2$state_nh <- as.factor(trainset2$state_nh)
+trainset2$state_vt <- as.factor(trainset2$state_vt)
+trainset2$state_ny <- as.factor(trainset2$state_ny)
+trainset2$state_ri <- as.factor(trainset2$state_ri)
+trainset2$state_va <- as.factor(trainset2$state_va)
+trainset2$state_me <- as.factor(trainset2$state_me)
+trainset2$state_pa <- as.factor(trainset2$state_pa)
+trainset2$state_vt <- as.factor(trainset2$state_vt)
+trainset2$state_wv <- as.factor(trainset2$state_wv)
+trainset2$new_build <- as.factor(trainset2$new_build)
+trainset2$has_sold <- as.factor(trainset2$has_sold)
+trainset2$state <- as.factor(trainset2$state)
+
+testset2$state_pr <- as.factor(testset2$state_pr)
+testset2$state_ma <- as.factor(testset2$state_ma)
+testset2$state_ct <- as.factor(testset2$state_ct)
+testset2$state_nj <- as.factor(testset2$state_nj)
+testset2$state_nh <- as.factor(testset2$state_nh)
+testset2$state_vt <- as.factor(testset2$state_vt)
+testset2$state_ny <- as.factor(testset2$state_ny)
+testset2$state_ri <- as.factor(testset2$state_ri)
+testset2$state_va <- as.factor(testset2$state_va)
+testset2$state_me <- as.factor(testset2$state_me)
+testset2$state_pa <- as.factor(testset2$state_pa)
+testset2$state_vt <- as.factor(testset2$state_vt)
+testset2$state_wv <- as.factor(testset2$state_wv)
+testset2$new_build <- as.factor(testset2$new_build)
+testset2$has_sold <- as.factor(testset2$has_sold)
+testset2$state <- as.factor(testset2$state)
+
+
+
+treeclass_train <- rpart(has_sold ~ price+bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa, data = trainset2, method = "class")
+fancyRpartPlot(treeclass_train)
+
+class_predict <- predict(treeclass_train, testset2, type = "class")
+conf_matrixtree <- confusionMatrix(testset2$has_sold, class_predict)
+conf_matrixtree
+
+#boosting
+#trainset21 <- trainset2[,c(2,3,4,5,10,15,17,18:29)]
+#trainset2y <- trainset2[,16]
+#xg_class <- xgboost(data=data.matrix(trainset21), label=as.matrix(trainset2y), eta=0.1, max_depth=15, objecive="binary:logistic")
+
+#bagging
+#set.seed(100)
+#bagclassify <- bagging(formula = has_sold ~ price+bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset2, nbagg=5, coop = TRUE, control=rpart.control(minsplit = 5, cp=0))
+
+#Random Forest for classification tree
+rf_classification <- randomForest(has_sold ~ price+bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa, data = trainset2, mtry = 5, ntree=5)
+rf_classification
+
+
+rf_claspredict <- predict(rf_classification, newdata = testset2)
+conf_matrixrf <- confusionMatrix(testset2$has_sold, rf_claspredict)
+conf_matrixrf
+
+
+#Regression Tree
+
+trainset1$state_pr <- as.factor(trainset1$state_pr)
+trainset1$state_ma <- as.factor(trainset1$state_ma)
+trainset1$state_ct <- as.factor(trainset1$state_ct)
+trainset1$state_nj <- as.factor(trainset1$state_nj)
+trainset1$state_nh <- as.factor(trainset1$state_nh)
+trainset1$state_vt <- as.factor(trainset1$state_vt)
+trainset1$state_ny <- as.factor(trainset1$state_ny)
+trainset1$state_ri <- as.factor(trainset1$state_ri)
+trainset1$state_va <- as.factor(trainset1$state_va)
+trainset1$state_me <- as.factor(trainset1$state_me)
+trainset1$state_pa <- as.factor(trainset1$state_pa)
+trainset1$state_vt <- as.factor(trainset1$state_vt)
+trainset1$state_wv <- as.factor(trainset1$state_wv)
+trainset1$new_build <- as.factor(trainset1$new_build)
+trainset1$has_sold <- as.factor(trainset1$has_sold)
+trainset1$state <- as.factor(trainset1$state)
+
+testset1$state_pr <- as.factor(testset1$state_pr)
+testset1$state_ma <- as.factor(testset1$state_ma)
+testset1$state_ct <- as.factor(testset1$state_ct)
+testset1$state_nj <- as.factor(testset1$state_nj)
+testset1$state_nh <- as.factor(testset1$state_nh)
+testset1$state_vt <- as.factor(testset1$state_vt)
+testset1$state_ny <- as.factor(testset1$state_ny)
+testset1$state_ri <- as.factor(testset1$state_ri)
+testset1$state_va <- as.factor(testset1$state_va)
+testset1$state_me <- as.factor(testset1$state_me)
+testset1$state_pa <- as.factor(testset1$state_pa)
+testset1$state_vt <- as.factor(testset1$state_vt)
+testset1$state_wv <- as.factor(testset1$state_wv)
+testset1$new_build <- as.factor(testset1$new_build)
+testset1$has_sold <- as.factor(testset1$has_sold)
+testset1$state <- as.factor(testset1$state)
+
+#decision tree for regression
+treereg_train <- rpart(price ~ bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_me+state_pa, data = trainset1)
+fancyRpartPlot(treereg_train)
+
+reg_predicttree <- predict(treereg_train, testset1)
+meanRSS.regtree <- mean((reg_predicttree-testset1$price)^2)
+meanRSS.regtree
+
+#set.seed(100)
+#bagpredict <- bagging(formula = price ~ bed+bath+acre_lot+house_size+breakeven+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_va+state_me+state_pa+state_wv, data = trainset1, nbagg=5, coop = TRUE, control=rpart.control(minsplit = 5, cp=0))
+
+
+#random forest for regression
+rf_regression <- randomForest(price~bed+bath+acre_lot+house_size+breakeven+has_sold+new_build+state_pr+state_ma+state_ct+state_nj+state_nh+ state_vt+state_ny+state_ri+state_me+state_pa, data = trainset1, ntree=5)
+rf_regression
+
+
+rf_regpredict <- predict(rf_regression, testset1)
+
+meanRSS.regtree_rf <- mean((rf_regpredict-testset1$price)^2)
+meanRSS.regtree_rf
+
+
+
+```
+
+```{r}
+#Mapping
+library(ggplot2)
+library(ggmap)
+
+
+register_google(key = "AIzaSyDAPas8vZS7n-d95L42fSAhHH88hN_Bp80", account_type = "Direct")
+
+#Geoplotting has sold and not sold
+lon1 <- data.frame(salesdata[salesdata$has_sold==0, 14])
+lat1 <- data.frame(salesdata[salesdata$has_sold==0, 13])
+
+location1 <- cbind(lon1, lat1)
+names(location1)[1] <- "lon1"
+names(location1)[2] <- "lat1"
+
+lon2 <- data.frame(salesdata[salesdata$has_sold==1, 14])
+lat2 <- data.frame(salesdata[salesdata$has_sold==1, 13])
+
+location2 <- cbind(lon2, lat2)
+names(location2)[1] <- "lon2"
+names(location2)[2] <- "lat2"
+
+easternus <- get_stamenmap(bbox = c(left = -84, bottom = 35, 
+                                  right = -66, top = 50), 
+                         zoom = 5)
+
+ggmap(easternus)+
+  geom_point(data = location1, aes(x=lon1, y=lat1), color = "red", size = 0.5, shape = 19, alpha = 0.5)+
+  geom_point(data = location2, aes(x=lon2, y=lat2), color = "green", size = 0.5, shape = 19, alpha = 0.5)
+  
+
+pr <- get_stamenmap(bbox = c(left =-67.4 , bottom = 17.9, 
+                                  right = -65.4, top = 18.6), 
+                         zoom = 10)
+
+ggmap(pr)+
+  geom_point(data = location1, aes(x=lon1, y=lat1), color = "red", size = 4, shape = 19, alpha = 0.5)+
+  geom_point(data = location2, aes(x=lon2, y=lat2), color = "green", size = 4, shape = 19, alpha = 0.5)
+
+
+
+#Geoplotting based on price
+lon_price1 <- data.frame(salesdata[salesdata$price<250000,14])
+lat_price1 <- data.frame(salesdata[salesdata$price<250000,13])
+location_price1 <- cbind(lon_price1, lat_price1)
+names(location_price1)[1] <- "lon_1"
+names(location_price1)[2] <- "lat_1"
+
+lon_price2 <- data.frame(salesdata[salesdata$price>=250000 & salesdata$price<500000,14])
+lat_price2 <- data.frame(salesdata[salesdata$price>=250000 & salesdata$price<500000,13])
+location_price2 <- cbind(lon_price2, lat_price2)
+names(location_price2)[1] <- "lon_2"
+names(location_price2)[2] <- "lat_2"
+
+lon_price3 <- data.frame(salesdata[salesdata$price>=500000 & salesdata$price<750000,14])
+lat_price3 <- data.frame(salesdata[salesdata$price>=500000 & salesdata$price<750000,13])
+location_price3 <- cbind(lon_price3, lat_price3)
+names(location_price3)[1] <- "lon3"
+names(location_price3)[2] <- "lat3"
+
+lon_price4 <- data.frame(salesdata[salesdata$price>=750000 & salesdata$price<1000000,14])
+lat_price4 <- data.frame(salesdata[salesdata$price>=750000 & salesdata$price<1000000,13])
+location_price4 <- cbind(lon_price4, lat_price4)
+names(location_price4)[1] <- "lon4"
+names(location_price4)[2] <- "lat4"
+
+lon_price5 <- data.frame(salesdata[salesdata$price>=1000000,14])
+lat_price5 <- data.frame(salesdata[salesdata$price>=1000000,13])
+location_price5 <- cbind(lon_price5, lat_price5)
+names(location_price5)[1] <- "lon5"
+names(location_price5)[2] <- "lat5"
+
+
+ggmap(easternus)+
+  geom_point(data = location_price1, aes(x=lon_1, y=lat_1), color = "blue", size = 0.5, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price2, aes(x=lon_2, y=lat_2), color = "yellow", size = 0.5, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price3, aes(x=lon3, y=lat3), color = "orange", size = 0.5, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price4, aes(x=lon4, y=lat4), color = "brown", size = 0.5, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price5, aes(x=lon5, y=lat5), color = "green", size = 0.5, shape = 19, alpha = 0.5)
+
+
+ggmap(pr)+
+  geom_point(data = location_price1, aes(x=lon_1, y=lat_1), color = "blue", size = 1, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price2, aes(x=lon_2, y=lat_2), color = "yellow", size =1, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price3, aes(x=lon3, y=lat3), color = "orange", size = 1, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price4, aes(x=lon4, y=lat4), color = "brown", size = 1, shape = 19, alpha = 0.5)+
+  geom_point(data = location_price5, aes(x=lon5, y=lat5), color = "green", size = 1, shape = 19, alpha = 0.5)
+```
+
+
+```{r}
+#matrix showing sold and not sold count of each price range
+sold1 <- nrow(salesdata[salesdata$price<250000 & salesdata$has_sold==1, ])
+notsold1 <- nrow(salesdata[salesdata$price<250000 & salesdata$has_sold==0, ])
+
+sold2 <- nrow(salesdata[salesdata$price>=250000&salesdata$price<500000 & salesdata$has_sold==1, ])
+notsold2 <- nrow(salesdata[salesdata$price>=250000&salesdata$price<500000 & salesdata$has_sold==0, ])
+
+sold3 <- nrow(salesdata[salesdata$price>=500000&salesdata$price<750000 & salesdata$has_sold==1, ])
+notsold3 <- nrow(salesdata[salesdata$price>=500000&salesdata$price<750000 & salesdata$has_sold==0, ])
+
+sold4 <- nrow(salesdata[salesdata$price>=750000&salesdata$price<1000000 & salesdata$has_sold==1, ])
+notsold4 <- nrow(salesdata[salesdata$price>=750000&salesdata$price<1000000 & salesdata$has_sold==0, ])
+
+sold5 <- nrow(salesdata[salesdata$price>=1000000 & salesdata$has_sold==1, ])
+notsold5 <- nrow(salesdata[salesdata$price>=1000000 & salesdata$has_sold==0, ])
+
+has_soldmatrix <- matrix(c(sold1, notsold1, sold2, notsold2, sold3, notsold3, sold4, notsold4, sold5, notsold5), nrow = 5, byrow = TRUE)
+
+rownames(has_soldmatrix)<- c("<250k", "250k-500k", "500k-750k", "750k-1000k","1000k")
+colnames(has_soldmatrix) <- c("sold", "notsold")
+
+has_soldmatrix
+```
+
