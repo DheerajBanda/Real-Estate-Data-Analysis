@@ -6,7 +6,7 @@ Selling real estate plays a crucial role in the US economy, and understanding ac
 factors influencing home sales, with a focus on price and location. The research employs various models, highlighting the effectiveness of non-parametric tree-based models in conjunction with maps for predicting 
 prices and determining home sales.
 
-<be>
+<br>
 
 **Data Sources**
 
@@ -19,11 +19,14 @@ To conduct this analysis, the following datasets were utilized:
 5. States.csv - Group-created file to facilitate data merging
 6. Fips2County.tsv - GitHub
 
+<br>
+
 **Predictive Models**
 
 _For Predicting Prices_
 
 Parametric Models:<br>
+
 Linear Regression
 Ridge and Lasso Regression - Implemented due to correlated independent variables, aiming for variable scaling/elimination.
 
@@ -40,10 +43,12 @@ Non-parametric Models:
 Decision Tree: Classification
 Random Forest: Classification
 
+<br>
+
 **Features Used for Prediction**
 
 For predicting prices and classification of sold/not sold, the following features were considered:
-
+<br> 
 <ul>
   <li></li>bed</li>
   <li>bath</li>
@@ -54,11 +59,13 @@ For predicting prices and classification of sold/not sold, the following feature
   <li>state</li>
 <\ul>
 
+<br>
+
 **Maps**
 
 Geo-coordinate plots were generated for better visualization:
-
-Price Prediction Categories:
+<ol>
+<li>Price Prediction Categories:</li>
 <ul>
   <li>Less than $250,000</li>
   <li>$250,000 to $500,000</li>
@@ -67,8 +74,9 @@ Price Prediction Categories:
   <li>$1,000,000 and above</li>
 </ul>
 
-**Sold/Not Sold Classification:**
+<li>Sold/Not Sold Classification:</li><br>
 Color-coded map based on the classification of sold and not sold properties.
+</ol>
 
 **Conclusion**
 This real estate analysis project provides insights into the US real estate market, emphasizing the importance of price and location. The employed models, datasets, and visualizations contribute to a 
