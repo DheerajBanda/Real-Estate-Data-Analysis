@@ -84,5 +84,19 @@ Color-coded map based on the classification of sold and not sold properties.
 
 **Conclusion**
 
-This real estate analysis project provides insights into the US real estate market, emphasizing the importance of price and location. The employed models, datasets, and visualizations contribute to a 
-comprehensive understanding of factors influencing home sales and pricing.
+Based on the accuracy readings and model performance analysis, it is evident that non-parametric tree methods outperform parametric models in both predicting home prices and classifying homes that sell. The mean RSS (Residual Sum of Squares) for regression models and accuracy/misclassification for classification models were considered for evaluation.
+
+<ol>
+<li>Prediction of Home Prices</li>
+<ul>
+<li>Decision Tree and Random Forest models yielded lower mean RSS compared to parametric models (Regression, Ridge Regression, Lasso, GAM).</li>
+<li>The location and price were identified as significant factors influencing the prediction of home prices.</li>
+</ul>
+  
+<li>Classification of Homes that Sell</li>
+<ul>
+<li>Decision Tree and Random Forest models demonstrated higher accuracy in classifying homes that sell, outperforming Logistic Regression.</li>
+<li>The classification matrix revealed that homes in the mid-price range (250,000 to 750,000) tended to sell more frequently.</li>
+<li>Urban areas showed a higher likelihood of selling, aligning with the influence of location on home sales.</li>
+</ul>
+</ol>
