@@ -23,25 +23,31 @@ To conduct this analysis, the following datasets were utilized:
 
 **Predictive Models**
 
-_For Predicting Prices_
-
-Parametric Models:<br>
-
+<ol>
+<li>For Predicting Prices</li>
+<ul>
+<li>Parametric Models:</li>
+<br>
 Linear Regression
 Ridge and Lasso Regression - Implemented due to correlated independent variables, aiming for variable scaling/elimination.
 
-Non-parametric Models:
+<li>Non-parametric Models:</li>
+<br>
 Decision Tree: Regression decision tree
 Random Forest: Regression-based random forest
-
-_For Sold/Not Sold Classification_
-
-Parametric Models:
+</ul>
+<li>For Sold/Not Sold Classification</li>
+<ul>
+<li>Parametric Models:</li>
+<br>
 Logistic Regression
 
-Non-parametric Models:
+<li>Non-parametric Models:</li>
+<br>
 Decision Tree: Classification
 Random Forest: Classification
+</ul>
+</ol>
 
 <br>
 
@@ -50,7 +56,7 @@ Random Forest: Classification
 For predicting prices and classification of sold/not sold, the following features were considered:
 <br> 
 <ul>
-  <li></li>bed</li>
+  <li>bed</li>
   <li>bath</li>
   <li>acre_lot</li>
   <li>house_size</li>
@@ -73,11 +79,14 @@ Geo-coordinate plots were generated for better visualization:
   <li>$750,000 to $1,000,000</li>
   <li>$1,000,000 and above</li>
 </ul>
-
+<br>
 <li>Sold/Not Sold Classification:</li><br>
 Color-coded map based on the classification of sold and not sold properties.
 </ol>
 
+<br>
+
 **Conclusion**
+
 This real estate analysis project provides insights into the US real estate market, emphasizing the importance of price and location. The employed models, datasets, and visualizations contribute to a 
 comprehensive understanding of factors influencing home sales and pricing.
