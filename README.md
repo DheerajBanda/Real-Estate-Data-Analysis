@@ -61,6 +61,8 @@ For predicting prices and classification of sold/not sold, the following feature
   <li>state</li>
 </ul>
 
+<br>
+
 **Maps**
 
 Geo-coordinate plots were generated for better visualization:
@@ -74,7 +76,7 @@ Geo-coordinate plots were generated for better visualization:
   <li>$1,000,000 and above</li>
 </ul>
 <br>
-<li>Sold/Not Sold Classification:</li><br>
+<li>Sold/Not Sold Classification:</li>
 Color-coded map based on the classification of sold and not sold properties.
 </ol>
 
