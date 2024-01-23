@@ -59,9 +59,7 @@ For predicting prices and classification of sold/not sold, the following feature
   <li>breakeven</li>
   <li>new_build</li>
   <li>state</li>
-<\ul>
-
-<br>
+</ul>
 
 **Maps**
 
