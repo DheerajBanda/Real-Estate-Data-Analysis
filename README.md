@@ -27,25 +27,21 @@ To conduct this analysis, the following datasets were utilized:
 <li>For Predicting Prices</li>
 <ul>
 <li>Parametric Models:</li>
-<br>
-Linear Regression
+Linear Regression<br>
 Ridge and Lasso Regression - Implemented due to correlated independent variables, aiming for variable scaling/elimination.
-
 <li>Non-parametric Models:</li>
-<br>
-Decision Tree: Regression decision tree
+Decision Tree: Regression decision tree<br>
 Random Forest: Regression-based random forest
 </ul>
+
 <li>For Sold/Not Sold Classification</li>
 <ul>
 <li>Parametric Models:</li>
-<br>
 Logistic Regression
-
 <li>Non-parametric Models:</li>
-<br>
-Decision Tree: Classification
+Decision Tree: Classification<br>
 Random Forest: Classification
+<br>
 </ul>
 </ol>
 
