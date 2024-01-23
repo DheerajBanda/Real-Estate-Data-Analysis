@@ -6,6 +6,8 @@ Selling real estate plays a crucial role in the US economy, and understanding ac
 factors influencing home sales, with a focus on price and location. The research employs various models, highlighting the effectiveness of non-parametric tree-based models in conjunction with maps for predicting 
 prices and determining home sales.
 
+<be>
+
 **Data Sources**
 
 To conduct this analysis, the following datasets were utilized:
