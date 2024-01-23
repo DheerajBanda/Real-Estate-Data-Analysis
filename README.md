@@ -99,4 +99,41 @@ Based on the accuracy readings and model performance analysis, it is evident tha
 <li>The classification matrix revealed that homes in the mid-price range (250,000 to 750,000) tended to sell more frequently.</li>
 <li>Urban areas showed a higher likelihood of selling, aligning with the influence of location on home sales.</li>
 </ul>
+
+<li>Visualizing the Relationship</li>
+To visualize the relationship between price and home sales, a matrix was created:<br>
+<table>
+  <tr>
+    <th></th>
+    <th>Sold</th>
+    <th>Not Sold</th>
+  </tr>
+  <tr>
+    <td>&lt;250k</td>
+    <td>4221</td>
+    <td>8351</td>
+  </tr>
+  <tr>
+    <td>250k-500k</td>
+    <td>10160</td>
+    <td>7503</td>
+  </tr>
+  <tr>
+    <td>500k-750k</td>
+    <td>5407</td>
+    <td>4378</td>
+  </tr>
+  <tr>
+    <td>750k-1000k</td>
+    <td>2854</td>
+    <td>2410</td>
+  </tr>
+  <tr>
+    <td>&gt;1000k</td>
+    <td>4228</td>
+    <td>4372</td>
+  </tr>
+</table>
+This matrix highlights that mid-range priced homes (250,000 to 750,000) tend to sell more frequently. Additionally, homes located in urban areas are more likely to sell, which aligns with the observation that urban properties are generally priced higher. Therefore, homes listed in the range of 250,000 to 750,000 in urban areas are likely well-priced and have a higher chance of selling.<br>
+In conclusion, the analysis emphasizes the significance of location and price in determining home sales. The decision tree models provide valuable insights into the interplay of these factors, contributing to a better understanding of the dynamics in the US real estate market.
 </ol>
