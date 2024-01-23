@@ -21,7 +21,7 @@ To conduct this analysis, the following datasets were utilized:
 
 _For Predicting Prices_
 
-Parametric Models:
+Parametric Models:<br>
 Linear Regression
 Ridge and Lasso Regression - Implemented due to correlated independent variables, aiming for variable scaling/elimination.
 
