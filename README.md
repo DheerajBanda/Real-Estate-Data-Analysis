@@ -42,30 +42,30 @@ Random Forest: Classification
 
 For predicting prices and classification of sold/not sold, the following features were considered:
 
-<li>
-  bed
-  bath
-  acre_lot
-  house_size
-  breakeven
-  new_build
-  state
-<\li>
+<ul>
+  <li></li>bed</li>
+  <li>bath</li>
+  <li>acre_lot</li>
+  <li>house_size</li>
+  <li>breakeven</li>
+  <li>new_build</li>
+  <li>state</li>
+<\ul>
 
 **Maps**
 
 Geo-coordinate plots were generated for better visualization:
 
 Price Prediction Categories:
-<li>
-  Less than $250,000
-  $250,000 to $500,000
-  $500,000 to $750,000
-  $750,000 to $1,000,000
-  $1,000,000 and above
-  Sold/Not Sold Classification:
-</li>
+<ul>
+  <li>Less than $250,000</li>
+  <li>$250,000 to $500,000</li>
+  <li>$500,000 to $750,000</li>
+  <li>$750,000 to $1,000,000</li>
+  <li>$1,000,000 and above</li>
+</ul>
 
+**Sold/Not Sold Classification:**
 Color-coded map based on the classification of sold and not sold properties.
 
 **Conclusion**
